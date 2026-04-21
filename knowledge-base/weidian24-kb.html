@@ -228,6 +228,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans G
         </div>
         <button class="btn-login" onclick="doLogin()">登 录</button>
         <div class="login-err" id="login-err"></div>
+        <div style="text-align:center;margin-top:12px"><button onclick="guestLogin()" style="background:none;border:none;color:#a3a3a3;font-size:12px;cursor:pointer;text-decoration:underline">👀 访客模式（免登录浏览）</button></div>
       </div>
       <!-- 注册面板 -->
       <div class="login-panel" id="panel-register">
@@ -1076,6 +1077,13 @@ window.onload=async ()=>{
 // ===== BLOCK 4: New Section Navigation & Overrides =====
 var problemCat1='', problemCat2='';
 
+// Guest login - view only, no account needed
+async function guestLogin(){
+  currentUser={username:'guest',name:'访客',role:'guest',status:'active'};
+  localStorage.setItem('kb_session',JSON.stringify(currentUser));
+  await startApp();
+}
+
 function switchSection(section){
   document.querySelectorAll('.section-view').forEach(function(el){el.classList.remove('active')});
   document.querySelectorAll('.nav-tab').forEach(function(el){el.classList.toggle('active',el.dataset.section===section)});
@@ -1290,9 +1298,13 @@ async function startApp(){
   document.getElementById('user-name').textContent=currentUser.name;
   var hu=document.getElementById('home-user-name');
   if(hu)hu.textContent=currentUser.name;
-  var rm={admin:'管理员',trainer:'培训师',viewer:'只读'};
+  var rm={admin:'管理员',trainer:'培训师',viewer:'只读',guest:'访客'};
   document.getElementById('role-badge').textContent=rm[currentUser.role]||currentUser.role;
   if(currentUser.role==='admin'||currentUser.role==='trainer')document.getElementById('admin-btn').style.display='';
+  else document.getElementById('admin-btn').style.display='none';
+  // Hide admin tab for guest
+  var adminNav=document.querySelector('.nav-tab[data-section="admin"]');
+  if(adminNav) adminNav.style.display=(currentUser.role==='guest')?'none':'';
   kbData=JSON.parse(JSON.stringify(RAW_DATA));
   var saved=localStorage.getItem('kb_data');
   if(saved)kbData=JSON.parse(saved);
