@@ -81,7 +81,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans G
 .home-section{margin-bottom:24px}
 .home-section h3{font-size:15px;font-weight:600;color:#171717;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #fef2f2}
 .path-steps{display:flex;gap:0;align-items:center;flex-wrap:wrap}
-.path-step{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:10px 16px;font-size:12px;color:#525252;font-weight:500}
+.path-step{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:10px 16px;font-size:12px;color:#525252;font-weight:500;cursor:pointer;transition:all .15s}
+.path-step:hover{border-color:#fecaca;background:#fef2f2;color:#dc2626;transform:translateY(-2px);box-shadow:0 2px 8px rgba(220,38,38,.1)}
 .path-step.current{background:#fef2f2;border-color:#fecaca;color:#dc2626}
 .path-arrow{color:#d4d4d4;font-size:16px;margin:0 4px}
 .recent-list{background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden}
@@ -306,12 +307,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans G
       <div class="home-section">
         <h3>📖 新人学习路径</h3>
         <div class="path-steps">
-          <div class="path-step current">1️⃣ 培训纪律</div><span class="path-arrow">→</span>
-          <div class="path-step">2️⃣ 公司认知</div><span class="path-arrow">→</span>
-          <div class="path-step">3️⃣ 岗位认知</div><span class="path-arrow">→</span>
-          <div class="path-step">4️⃣ 设备系统</div><span class="path-arrow">→</span>
-          <div class="path-step">5️⃣ 实操培训</div><span class="path-arrow">→</span>
-          <div class="path-step">6️⃣ 考核结业</div>
+          <div class="path-step current" onclick="jumpToTraining('培训总览')">1️⃣ 培训纪律</div><span class="path-arrow">→</span>
+          <div class="path-step" onclick="jumpToTraining('公司与项目认知')">2️⃣ 公司认知</div><span class="path-arrow">→</span>
+          <div class="path-step" onclick="jumpToTraining('岗位认知')">3️⃣ 岗位认知</div><span class="path-arrow">→</span>
+          <div class="path-step" onclick="jumpToTraining('设备与系统认知')">4️⃣ 设备系统</div><span class="path-arrow">→</span>
+          <div class="path-step" onclick="jumpToTraining('实操培训')">5️⃣ 实操培训</div><span class="path-arrow">→</span>
+          <div class="path-step" onclick="jumpToTraining('考核与结业')">6️⃣ 考核结业</div>
         </div>
       </div>
       <div class="home-section">
@@ -1082,6 +1083,19 @@ async function guestLogin(){
   currentUser={username:'guest',name:'访客',role:'guest',status:'active'};
   localStorage.setItem('kb_session',JSON.stringify(currentUser));
   await startApp();
+}
+
+function jumpToTraining(section){
+  switchSection('training');
+  // Expand the matching cat-card
+  var cards=document.querySelectorAll('#training-grid .cat-card');
+  cards.forEach(function(card){
+    var head=card.querySelector('.cat-card-head');
+    if(head && head.textContent.indexOf(section)>=0){
+      card.classList.add('open');
+      card.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
 }
 
 function switchSection(section){
