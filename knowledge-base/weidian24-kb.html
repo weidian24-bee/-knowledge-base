@@ -1231,9 +1231,14 @@ function renderCatGrid(containerId, data){
   for(var ti=0;ti<titles.length;ti++){
     var title=titles[ti];
     var items=data[title];
-    html+='<div class="cat-card"><div class="cat-card-head" onclick="this.parentElement.classList.toggle(\'open\')">'+esc(title)+' <span style="font-size:12px;font-weight:400;color:#a3a3a3">'+items.length+'项</span></div><div class="cat-card-body">';
+    html+='<div class="cat-card open"><div class="cat-card-head" onclick="this.parentElement.classList.toggle(\'open\')">'+esc(title)+' <span style="font-size:12px;font-weight:400;color:#a3a3a3">'+items.length+'项 ▾</span></div><div class="cat-card-body">';
     for(var j=0;j<items.length;j++){
-      html+='<div class="cat-card-item">'+esc(items[j])+'</div>';
+      var item=items[j];
+      if(typeof item==='object'){
+        html+='<div class="cat-card-item"><div style="font-weight:500;margin-bottom:4px">'+esc(item.title)+'</div><div style="font-size:12px;color:#737373;white-space:pre-wrap;line-height:1.6">'+esc(item.content)+'</div></div>';
+      } else {
+        html+='<div class="cat-card-item">'+esc(item)+'</div>';
+      }
     }
     html+='</div></div>';
   }
@@ -1264,14 +1269,38 @@ function renderAISection(){
 
 function renderScriptsSection(){
   renderCatGrid('scripts-grid',{
-    '基础接待话术':['您好欢迎光临','感谢光临欢迎下次到来'],
-    '支付引导话术':['扫码支付引导','现金支付处理'],
-    '商品问题话术':['商品无码处理','商品破损处理'],
-    '风险制止话术':['偷盗制止','少付提醒'],
-    '安抚顾客话术':['等待安抚','投诉安抚'],
-    '转人工话术':['标准转人工话术','紧急转人工话术'],
-    '商家沟通话术':['日常沟通','异常上报'],
-    '班长上报话术':['标准上报','紧急上报']
+    '基础接待话术':[
+      {title:'欢迎光临',content:'您好，欢迎光临！请问您需要什么帮助？'},
+      {title:'感谢光临',content:'感谢您的光临，欢迎下次再来！如有任何问题随时联系我们。'}
+    ],
+    '支付引导话术':[
+      {title:'扫码支付引导',content:'您好，我们支持微信、支付宝扫码支付。请打开支付宝/微信，扫描收款码即可完成支付。'},
+      {title:'现金支付处理',content:'您好，我们主要支持扫码支付。如需现金请联系店内工作人员协助。'}
+    ],
+    '商品问题话术':[
+      {title:'商品无码处理',content:'您好，该商品暂时无法扫码，已为您登记并上报处理。请稍候或联系店内工作人员。'},
+      {title:'商品破损处理',content:'非常抱歉，已为您登记并上报处理。请保留商品和购物凭证，我们会尽快为您处理。'}
+    ],
+    '风险制止话术':[
+      {title:'少付提醒',content:'您好，系统显示您的订单金额不足，请确认并补付差额。感谢配合！'},
+      {title:'偷盗制止',content:'您好，请注意店内有监控设备，所有商品请按规定扫码付款。如有需要请联系工作人员。'}
+    ],
+    '安抚顾客话术':[
+      {title:'等待安抚',content:'非常抱歉让您久等，我们正在尽快为您处理，请稍候。'},
+      {title:'投诉安抚',content:'非常抱歉给您带来不好的体验，我们会认真对待您的反馈并尽快改进。'}
+    ],
+    '转人工话术':[
+      {title:'标准转人工',content:'您好，您的问题需要人工客服进一步处理，正在为您转接，请稍候。'},
+      {title:'紧急转人工',content:'您好，您的情况需要紧急处理，我将立即为您转接人工客服。'}
+    ],
+    '商家沟通话术':[
+      {title:'日常沟通',content:'您好，这里是微帇24客服，请问有什么需要帮助？'},
+      {title:'异常上报',content:'您好，已收到您的反馈，我们会尽快处理并回复您。'}
+    ],
+    '班长上报话术':[
+      {title:'标准上报',content:'班长，现在发生了[XXX情况]，地点在[XXX门店]，顾客[XXX行为]，已采取[XXX措施]，请指示。'},
+      {title:'紧急上报',content:'班长！紧急情况！[XXX门店]发生[XXX事件]，需要立即处理！'}
+    ]
   });
 }
 
