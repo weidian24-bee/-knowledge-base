@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>周黑鸭值守知识库</title>
+<style>
+/* ===== 全局 ===== */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: "PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif; background:#f5f6fa; color:#333; }
+a { color:#4a6cf7; text-decoration:none; }
+
+/* ===== 登录页 ===== */
+.login-page { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff8c42 0%,#d4380d 100%); }
+.login-card { background:#fff; border-radius:16px; padding:48px 40px; width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.15); }
+.login-logo { font-size:56px; margin-bottom:8px; }
+.login-card h1 { font-size:22px; color:#333; margin-bottom:4px; }
+.login-subtitle { font-size:13px; color:#999; margin-bottom:28px; }
+.form-group { text-align:left; margin-bottom:16px; }
+.form-group label { display:block; font-size:13px; color:#666; margin-bottom:6px; font-weight:600; }
+.form-group input { width:100%; padding:11px 14px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:14px; outline:none; transition:border .2s; }
+.form-group input:focus { border-color:#ff8c42; }
+.btn-primary { background:linear-gradient(135deg,#ff8c42,#d4380d); color:#fff; border:none; padding:12px 28px; border-radius:8px; font-size:15px; cursor:pointer; font-weight:600; transition:opacity .2s; }
+.btn-primary:hover { opacity:.9; }
+.btn-full { width:100%; }
+.login-error { color:#e74c3c; font-size:13px; margin-top:12px; min-height:20px; }
+
+/* ===== 顶部栏 ===== */
+.top-bar { height:56px; background:#fff; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; padding:0 24px; position:sticky; top:0; z-index:100; }
+.top-left { display:flex; align-items:center; gap:12px; }
+.sidebar-toggle { background:none; border:none; font-size:20px; cursor:pointer; color:#666; display:none; }
+.brand { font-size:17px; font-weight:700; color:#d4380d; }
+.top-right { display:flex; align-items:center; gap:12px; }
+.user-badge { font-size:13px; padding:4px 12px; border-radius:20px; font-weight:600; }
+.user-badge.admin { background:#fff1f0; color:#cf1322; }
+.user-badge.trainer { background:#fff7e6; color:#d46b08; }
+.user-badge.viewer { background:#e6f7ff; color:#096dd9; }
+.btn-sm { padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; }
+.btn-outline { background:none; border:1.5px solid #ddd; color:#666; }
+.btn-outline:hover { border-color:#d4380d; color:#d4380d; }
+
+/* ===== 布局 ===== */
+.main-app { display:flex; flex-direction:column; min-height:100vh; }
+.app-body { display:flex; flex:1; }
+.sidebar { width:260px; background:#fff; border-right:1px solid #eee; overflow-y:auto; height:calc(100vh - 56px); position:sticky; top:56px; flex-shrink:0; }
+.content { flex:1; padding:28px 32px; overflow-y:auto; max-width:960px; }
+
+/* ===== 侧边栏 ===== */
+.sidebar-nav { padding:16px 0; }
+.nav-category { padding:0 20px; margin-bottom:4px; }
+.nav-category-title { font-size:11px; color:#999; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding:12px 0 6px; }
+.nav-item { display:flex; align-items:center; gap:8px; padding:10px 20px; font-size:14px; color:#555; cursor:pointer; border-radius:0; transition:all .15s; border-left:3px solid transparent; }
+.nav-item:hover { background:#fff7f0; color:#d4380d; }
+.nav-item.active { background:#fff1f0; color:#d4380d; border-left-color:#d4380d; font-weight:600; }
+.nav-item .nav-icon { font-size:16px; width:22px; text-align:center; }
+.nav-divider { height:1px; background:#f0f0f0; margin:8px 20px; }
+.nav-item.admin-only { color:#cf1322; }
+
+/* ===== 内容卡片 ===== */
+.page-title { font-size:22px; font-weight:700; color:#333; margin-bottom:6px; }
+.page-desc { font-size:13px; color:#999; margin-bottom:24px; }
+.card { background:#fff; border-radius:12px; padding:24px; margin-bottom:20px; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+.card h2 { font-size:17px; color:#333; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #f0f0f0; }
+.card h3 { font-size:15px; color:#444; margin:16px 0 8px; }
+.card h4 { font-size:14px; color:#555; margin:12px 0 6px; }
+.card p, .card li { font-size:14px; line-height:1.8; color:#555; }
+.card ul, .card ol { padding-left:20px; margin:8px 0; }
+.card table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+.card table th { background:#fff7f0; color:#d4380d; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid #ffd8bf; }
+.card table td { padding:10px 12px; border-bottom:1px solid #f0f0f0; color:#555; }
+.card table tr:hover td { background:#fffbe6; }
+.card blockquote { background:#fff7f0; border-left:4px solid #ff8c42; padding:12px 16px; border-radius:0 8px 8px 0; margin:12px 0; font-size:13px; color:#666; }
+.card .highlight-box { background:#fff1f0; border:1px solid #ffccc7; border-radius:8px; padding:14px 18px; margin:12px 0; }
+.card .highlight-box strong { color:#cf1322; }
+.card .info-box { background:#e6f7ff; border:1px solid #91d5ff; border-radius:8px; padding:14px 18px; margin:12px 0; }
+.card .warn-box { background:#fffbe6; border:1px solid #ffe58f; border-radius:8px; padding:14px 18px; margin:12px 0; }
+.card code { background:#f5f5f5; padding:2px 6px; border-radius:4px; font-size:13px; color:#d4380d; }
+.card .flow-step { display:flex; align-items:flex-start; gap:12px; margin:8px 0; }
+.card .flow-num { width:28px; height:28px; border-radius:50%; background:#d4380d; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.card .flow-text { flex:1; font-size:14px; line-height:1.7; }
+
+/* ===== 首页统计 ===== */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.stat-card { background:#fff; border-radius:12px; padding:20px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+.stat-num { font-size:32px; font-weight:700; }
+.stat-num.orange { color:#ff8c42; }
+.stat-num.red { color:#d4380d; }
+.stat-num.blue { color:#1890ff; }
+.stat-num.green { color:#52c41a; }
+.stat-label { font-size:13px; color:#999; margin-top:4px; }
+.quick-links { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+.quick-link { background:#fff; border-radius:10px; padding:16px 20px; display:flex; align-items:center; gap:12px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.04); transition:all .2s; border:1.5px solid transparent; }
+.quick-link:hover { border-color:#ff8c42; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+.quick-link .ql-icon { font-size:28px; }
+.quick-link .ql-text { font-size:14px; font-weight:600; color:#333; }
+.quick-link .ql-desc { font-size:12px; color:#999; margin-top:2px; }
+
+/* ===== 后台管理 ===== */
+.admin-table { width:100%; border-collapse:collapse; }
+.admin-table th { background:#f8f8f8; padding:10px 14px; text-align:left; font-size:13px; color:#666; font-weight:600; border-bottom:2px solid #eee; }
+.admin-table td { padding:10px 14px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+.admin-table tr:hover td { background:#fffbe6; }
+.btn-xs { padding:4px 10px; border-radius:4px; font-size:11px; cursor:pointer; border:none; font-weight:600; }
+.btn-edit { background:#e6f7ff; color:#1890ff; }
+.btn-edit:hover { background:#bae7ff; }
+.btn-del { background:#fff1f0; color:#cf1322; }
+.btn-del:hover { background:#ffccc7; }
+.btn-hist { background:#f6ffed; color:#52c41a; }
+.btn-hist:hover { background:#d9f7be; }
+.btn-add { background:#ff8c42; color:#fff; border:none; padding:8px 20px; border-radius:6px; font-size:13px; cursor:pointer; font-weight:600; }
+.btn-add:hover { background:#d4380d; }
+
+/* ===== 用户管理 ===== */
+.user-table { width:100%; border-collapse:collapse; margin-top:12px; }
+.user-table th { background:#f8f8f8; padding:8px 12px; text-align:left; font-size:12px; color:#666; }
+.user-table td { padding:8px 12px; border-bottom:1px solid #f0f0f0; font-size:13px; }
+.role-tag { padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.role-tag.admin { background:#fff1f0; color:#cf1322; }
+.role-tag.trainer { background:#fff7e6; color:#d46b08; }
+.role-tag.viewer { background:#e6f7ff; color:#096dd9; }
+
+/* ===== 弹窗 ===== */
+.modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal-panel { background:#fff; border-radius:14px; width:92%; max-width:640px; max-height:88vh; overflow-y:auto; }
+.modal-wide { max-width:800px; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:20px 24px; border-bottom:1px solid #f0f0f0; }
+.modal-header h2 { font-size:17px; color:#333; }
+.modal-close { background:none; border:none; font-size:24px; color:#999; cursor:pointer; }
+.modal-close:hover { color:#333; }
+.modal-body { padding:24px; }
+.modal-footer { padding:16px 24px; border-top:1px solid #f0f0f0; display:flex; gap:10px; justify-content:flex-end; }
+
+/* ===== 编辑器 ===== */
+.editor-group { margin-bottom:16px; }
+.editor-group label { display:block; font-size:13px; color:#666; margin-bottom:6px; font-weight:600; }
+.editor-group input, .editor-group select, .editor-group textarea { width:100%; padding:10px 14px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:14px; outline:none; font-family:inherit; }
+.editor-group input:focus, .editor-group select:focus, .editor-group textarea:focus { border-color:#ff8c42; }
+.editor-group textarea { min-height:300px; resize:vertical; line-height:1.7; }
+
+/* ===== 搜索 ===== */
+.search-bar { margin-bottom:20px; }
+.search-bar input { width:100%; padding:12px 18px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:14px; outline:none; background:#fff; }
+.search-bar input:focus { border-color:#ff8c42; }
+.search-result-item { padding:14px 18px; background:#fff; border-radius:8px; margin-bottom:8px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.04); transition:all .15s; }
+.search-result-item:hover { box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.search-result-item .sr-title { font-size:15px; font-weight:600; color:#333; }
+.search-result-item .sr-cat { font-size:12px; color:#999; margin-top:2px; }
+.search-result-item .sr-snippet { font-size:13px; color:#666; margin-top:6px; line-height:1.6; }
+.search-result-item mark { background:#fff3cd; padding:0 2px; border-radius:2px; }
+
+/* ===== 版本历史 ===== */
+.history-item { padding:14px 0; border-bottom:1px solid #f0f0f0; }
+.history-item:last-child { border-bottom:none; }
+.history-meta { font-size:12px; color:#999; margin-bottom:6px; }
+.history-meta span { margin-right:16px; }
+.history-action { font-size:12px; padding:2px 8px; border-radius:10px; font-weight:600; }
+.history-action.create { background:#f6ffed; color:#52c41a; }
+.history-action.update { background:#e6f7ff; color:#1890ff; }
+.history-action.delete { background:#fff1f0; color:#cf1322; }
+
+/* ===== 响应式 ===== */
+@media (max-width:768px) {
+  .sidebar { position:fixed; left:-280px; top:56px; height:calc(100vh - 56px); z-index:200; transition:left .25s; box-shadow:none; }
+  .sidebar.open { left:0; box-shadow:4px 0 20px rgba(0,0,0,.1); }
+  .sidebar-toggle { display:block !important; }
+  .content { padding:20px 16px; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .modal-panel { width:96%; }
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="loginPage" class="login-page">
+  <div class="login-card">
+    <div class="login-logo">🦆</div>
+    <h1>周黑鸭值守知识库</h1>
+    <p class="login-subtitle">24小时值守团队专用</p>
+    <div class="login-form">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="loginUser" placeholder="请输入用户名" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="loginPwd" placeholder="请输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-primary btn-full" onclick="doLogin()">登 录</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="mainApp" class="main-app" style="display:none;">
+  <header class="top-bar">
+    <div class="top-left">
+      <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <span class="brand">🦆 周黑鸭值守知识库</span>
+    </div>
+    <div class="top-right">
+      <span class="user-badge" id="userBadge"></span>
+      <button class="btn-sm btn-outline" onclick="doLogout()">退出</button>
+    </div>
+  </header>
+  <div class="app-body">
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidebar-nav" id="sidebarNav"></nav>
+    </aside>
+    <main class="content" id="contentArea"></main>
+  </div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-panel">
+    <div class="modal-header"><h2 id="modalTitle">后台管理</h2><button class="modal-close" onclick="closeModal()">&times;</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="editModal">
+  <div class="modal-panel modal-wide">
+    <div class="modal-header"><h2 id="editModalTitle">编辑文章</h2><button class="modal-close" onclick="closeEditModal()">&times;</button></div>
+    <div class="modal-body" id="editModalBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-panel">
+    <div class="modal-header"><h2>版本历史</h2><button class="modal-close" onclick="closeHistoryModal()">&times;</button></div>
+    <div class="modal-body" id="historyModalBody"></div>
+  </div>
+</div>
+
+<script>
+// ===== 知识库数据层 =====
+const DEFAULT_USERS = [
+  { username:'admin', password:'admin888', role:'admin', name:'管理员' },
+  { username:'trainer', password:'train666', role:'trainer', name:'培训师' },
+  { username:'guest', password:'guest123', role:'viewer', name:'查询员' }
+];
+const ROLE_LABELS = { admin:'管理员', trainer:'日常维护培训师', viewer:'查询浏览' };
+const ROLE_PERMS = {
+  admin: ['view','edit','delete','manage_users','manage_categories','view_history'],
+  trainer: ['view','edit','view_history'],
+  viewer: ['view']
+};
+const DEFAULT_CATEGORIES = [
+  { id:'ops', name:'运营管理', icon:'📋', order:1 },
+  { id:'aftersale', name:'售后处理', icon:'🔄', order:2 },
+  { id:'duty', name:'岗位职责', icon:'👥', order:3 },
+  { id:'script', name:'话术模板', icon:'💬', order:4 },
+  { id:'flow', name:'流程图解', icon:'📊', order:5 },
+  { id:'training', name:'培训考核', icon:'📝', order:6 }
+];
+// 文章数据 - 从知识文档整理
+const DEFAULT_ARTICLES = [
+// ========== 运营管理 ==========
+{
+  id:'art_001', categoryId:'ops', title:'值守团队运营及店长日常工作SOP',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<blockquote>文件目的：规范周黑鸭24小时无人值守门店的夜间运营、突发异常处理及客服接待标准，明确运营岗与值班店长的职责边界与协同流程。<br>适用范围：微店24值守团队运营岗、二线值班店长<br>值守核心目标：实时监控门店状态、规范处理售后需求、拦截店内异常风险。</blockquote>'
+  + '<h3>岗位职责与核心使命</h3>'
+  + '<ul>'
+  + '<li><strong>运营岗职责</strong>：实时监控各门店运营状态，严格按照SOP处理顾客咨询与售后退款；遇到超出权限或复杂情况，第一时间转交二线值班店长跟进，确保问题闭环。</li>'
+  + '<li><strong>运营岗使命</strong>：持续巡视店铺动态，以专业、及时的服务响应顾客，敏锐发现店内异常并主动拦截风险。</li>'
+  + '<li><strong>值班店长职责</strong>：负责接手运营岗无法处理的升级客诉（如赔偿、重大投诉），协调跑腿关门等突发线下异常，并对整体服务质量兜底。</li>'
+  + '</ul>'
+  + '<h3>模块一：线上餐道系统与营业状态管理</h3>'
+  + '<h4>1. 登录与监控</h4>'
+  + '<ul>'
+  + '<li>操作步骤：输入账号密码登录系统 → 点击【COMS 6.0】进入主界面。</li>'
+  + '<li>邮箱监控：登录公共邮箱，专门用于接收门店状态相关邮件。</li>'
+  + '<li><div class="highlight-box"><strong>🚨核心动作</strong>：一旦收到邮件提示店铺状态为"繁忙"，必须<strong>立即</strong>进入餐道系统将状态调整回"营业"。</div></li>'
+  + '</ul>'
+  + '<h4>2. 营业状态修改步骤</h4>'
+  + '<ol><li>进入"门店列表"页面</li><li>输入门店名称或映射码定位门店</li><li>点击右侧"门店营业设置"</li><li>在弹窗中选择"休息"，<strong>随后立即调至"营业"</strong></li></ol>'
+  + '<h4>3. 突发闭店处理流程（五步法）</h4>'
+  + '<p><strong>触发场景</strong>：商家群内要求闭店；或店铺出现断电断网、黑屏、对讲无声等影响正常值守的设备异常。</p>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>巡查</strong>：定时巡查问题店铺，确认需要闭店</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>通知</strong>：在对应店铺群内发送闭店通知，并做好登记</div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>联系</strong>：针对店内未取订单，致电顾客致歉并协商取消订单</div></div>'
+  + '<div class="flow-step"><div class="flow-num">4</div><div class="flow-text"><strong>恢复</strong>：异常情况解除或商家通知后，打开平台营业状态</div></div>'
+  + '<div class="flow-step"><div class="flow-num">5</div><div class="flow-text"><strong>报备</strong>：在门店群内报备已恢复营业</div></div>'
+  + '<h3>模块五：高危红线与异常升级机制</h3>'
+  + '<h4>🚨 冰箱门未关问题（核心红线）</h4>'
+  + '<div class="highlight-box"><strong>风险提示</strong>：未关紧冰箱门将导致冷鲜品失温全部报废，给商家造成重大损失！</div>'
+  + '<ul>'
+  + '<li><strong>日常提醒</strong>：骑手取货时，通过对讲温和提醒："您拿取冰箱内/保鲜柜里的商品后，请将冰箱门关好。"</li>'
+  + '<li><strong>超时应急（升级店长）</strong>：发现冰箱门未关超过30分钟且联系不到人，<strong>立即上报值班店长，呼叫跑腿小哥强制关闭冰箱门</strong>。</li>'
+  + '</ul>'
+  + '<h4>异常升级流程</h4>'
+  + '<p><strong>触发升级条件</strong>：</p>'
+  + '<ul><li>顾客情绪激动，常规话术无法安抚</li><li>顾客要求大额赔偿或食品安全维权</li><li>门店突发线下紧急状况（冰箱门长时间未关、门禁损坏、异常人员闯入等）</li><li>系统设备大面积瘫痪无法接单</li></ul>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>稳住局面</strong>：安抚顾客/骑手，话术："您的问题我已经详细记录，马上为您联系主管处理，请稍等。"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>上报店长</strong>：向二线值班店长汇报三要素（订单号/门店、当前情况、对方诉求）</div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>协同闭环</strong>：店长接手后处理，运营岗在群内做好日志记录与交接</div></div>'
+},
+{
+  id:'art_002', categoryId:'ops', title:'400客服热线及话术',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<div class="highlight-box"><strong>🚨 红线规定</strong>：400电话接听时间严格为 <strong>21:30 — 次日 09:30</strong>，其余时间必须关机！</div>'
+  + '<h3>骑手进线</h3>'
+  + '<table><tr><th>场景</th><th>标准话术</th></tr>'
+  + '<tr><td>骑手找不到店铺</td><td>您好，请您根据平台提供的导航路线行驶，按照导航指引即可找到店铺位置。</td></tr>'
+  + '<tr><td>骑手不取货</td><td>若您无法取货，可在平台操作转单，或者上报相关异常情况，我们会协助处理的。</td></tr>'
+  + '<tr><td>骑手询问取货流程</td><td>您扫码进门后，会有客服人员与您对接，他们会指引您完成取货流程的。</td></tr></table>'
+  + '<h3>顾客进线</h3>'
+  + '<table><tr><th>场景</th><th>标准话术</th></tr>'
+  + '<tr><td>顾客询问门店营业时间</td><td>我们门店是全天24小时营业的，随时欢迎您的光临或下单。</td></tr></table>'
+},
+// ========== 售后处理 ==========
+{
+  id:'art_003', categoryId:'aftersale', title:'售后处理完善版SOP（核心原则）',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>一、售后处理核心原则</h3>'
+  + '<h4>1.1 三大铁律</h4>'
+  + '<ol><li><strong>所有同意的退款必须备注"微店"</strong> + 门店群内同步商家</li>'
+  + '<li><strong>非值守时段（10:00-20:00）的订单纠纷，夜间暂不处理</strong>，引导次日白班跟进</li>'
+  + '<li><strong>先核实订单状态，再做决策</strong> — 避免误判导致商家损失或顾客投诉升级</li></ol>'
+  + '<h4>1.2 处理时效要求</h4>'
+  + '<table><tr><th>类型</th><th>时效</th></tr>'
+  + '<tr><td>退款申请响应</td><td>收到申请后 <strong>15分钟内</strong> 完成审核</td></tr>'
+  + '<tr><td>顾客来电/在线咨询</td><td><strong>5分钟内</strong> 给出初步回复</td></tr>'
+  + '<tr><td>骑手异常上报</td><td><strong>10分钟内</strong> 核实并处理</td></tr></table>'
+  + '<h4>1.3 权限边界</h4>'
+  + '<table><tr><th>可直接处理</th><th>需上报班长</th><th>需转白班处理</th></tr>'
+  + '<tr><td>单品缺货退款</td><td>整单金额 &gt;200元</td><td>食品安全投诉</td></tr>'
+  + '<tr><td>骑手未找到货</td><td>顾客情绪激动威胁投诉</td><td>要求赔偿/补偿</td></tr>'
+  + '<tr><td>少送商品（已核实）</td><td>重复退款（同一顾客3次以上）</td><td>变质/异物等质量问题</td></tr>'
+  + '<tr><td>顾客主动取消（未配送）</td><td>疑似恶意退款</td><td>要求开发票/收据</td></tr></table>'
+},
+{
+  id:'art_004', categoryId:'aftersale', title:'分阶段售后场景处理手册',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>阶段一：骑手未到店</h3>'
+  + '<h4>场景A1：顾客申请退款（商家原因）</h4>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">系统驳回退款申请</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">发送话术："亲亲您好，您选择的退款原因不太准确哦。如果您不想要了，请重新申请并选择\'我不想要了\'作为退款原因，我们会立即为您处理。"</div></div>'
+  + '<div class="info-box">注意：商家原因退款会影响店铺评分，必须驳回并引导顾客更改原因。</div>'
+  + '<h4>场景A2：顾客申请退款（顾客原因）</h4>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">系统点击"同意退款"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">备注栏填写"微店"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text">门店群内同步</div></div>'
+  + '<h3>阶段二：骑手配送中</h3>'
+  + '<h4>场景B1：商家群内未报备，顾客申请退款</h4>'
+  + '<p>系统驳回，发送话术引导客服介入（10:00-20:00处理）</p>'
+  + '<h4>场景B2：商家群内已报备（缺货、漏装等）</h4>'
+  + '<p>核对群内报备信息 → 系统同意退款 → 备注"微店" → 群内回复</p>'
+  + '<h4>场景B3：骑手未拿走</h4>'
+  + '<p>主动联系顾客致歉 → 引导退款重新下单 → 系统同意 → 群内报备</p>'
+  + '<h4>场景B4：长时间未送达（超40分钟）</h4>'
+  + '<p>联系骑手询问进度 → 根据反馈分类处理（正常配送/意外/失联）</p>'
+  + '<h3>阶段三：骑手到店但未找到货</h3>'
+  + '<h4>场景C1：客服主动发起售后（四步处理法）</h4>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">第一时间致电顾客致歉</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">引导单品退款（仅缺货商品）</div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text">系统审核通过，备注"微店"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">4</div><div class="flow-text">门店群内同步</div></div>'
+  + '<h3>阶段四：订单已送达</h3>'
+  + '<table><tr><th>场景</th><th>处理方式</th></tr>'
+  + '<tr><td>少送商品（单品退款）</td><td>核实属实 → 同意退款备注"微店"</td></tr>'
+  + '<tr><td>整单退款</td><td>驳回，引导客服介入</td></tr>'
+  + '<tr><td>部分金额退款</td><td>系统自动驳回</td></tr>'
+  + '<tr><td>质量问题（变质/异物）</td><td>驳回，引导保留证据白班处理</td></tr></table>'
+},
+{
+  id:'art_005', categoryId:'aftersale', title:'特殊场景与异常处理',
+  visibility:'trainer', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>顾客重复申请退款</h3>'
+  + '<ul><li>查看历史退款记录，确认之前处理结果</li>'
+  + '<li>之前已驳回的继续驳回，话术保持一致</li>'
+  + '<li>连续申请3次以上，上报班长介入</li></ul>'
+  + '<h3>疑似恶意退款</h3>'
+  + '<div class="warn-box"><strong>识别特征</strong>：同一顾客7天内退款5次以上 / 订单完成多日后突然申请 / 退款理由前后矛盾</div>'
+  + '<p>处理：暂不处理，截图保存证据 → 上报班长联系平台风控 → 群内报备</p>'
+  + '<h3>顾客威胁投诉/差评</h3>'
+  + '<ol><li>保持冷静，不要激化矛盾</li>'
+  + '<li>安抚话术："非常理解您的心情...您的问题我已经详细记录，会立即上报给我们的主管..."</li>'
+  + '<li>立即上报班长</li><li>门店群内报备</li></ol>'
+  + '<h3>骑手投诉/纠纷</h3>'
+  + '<ol><li>先安抚骑手情绪，了解具体情况</li>'
+  + '<li>能现场解决的立即解决</li>'
+  + '<li>无法解决的上报平台</li>'
+  + '<li>涉及顾客的及时沟通</li></ol>'
+},
+{
+  id:'art_006', categoryId:'aftersale', title:'顾客安抚与沟通技巧',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>情绪安抚三步法</h3>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text"><strong>认同情绪</strong>："我完全理解您的心情" / "换作是我也会很着急"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text"><strong>承认问题</strong>："这确实是我们的责任" / "给您带来不便真的很抱歉"</div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text"><strong>给出方案</strong>："我们会这样处理..." / "建议您..."</div></div>'
+  + '<h3>常见顾客异议应对</h3>'
+  + '<table><tr><th>异议</th><th>应对话术</th></tr>'
+  + '<tr><td>"为什么不能现在退款？"</td><td>非常抱歉，因为我们是夜间托管客服，权限有限。白班客服会优先处理，最晚明天下午给您答复。</td></tr>'
+  + '<tr><td>"我要投诉你们！"</td><td>您有权利投诉。但在投诉之前，能否给我们一次解决问题的机会？我已经把您的情况详细记录，明天一定给您满意的答复。</td></tr>'
+  + '<tr><td>"我以后再也不买了！"</td><td>真的非常抱歉让您有这样的体验。我们会认真改进，也希望能有机会重新赢得您的信任。</td></tr></table>'
+},
+// ========== 岗位职责 ==========
+{
+  id:'art_007', categoryId:'duty', title:'客服与二线专员职责分工',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>整体流程概述</h3>'
+  + '<p>本流程涵��从用户咨询到问题解决的完整链路，明确了客服（一线）和二线专员在不同环节的职责边界。</p>'
+  + '<h3>客服（一线）职责</h3>'
+  + '<h4>接收与初步响应</h4>'
+  + '<ul><li>通过各渠道接收用户问题</li><li>快速识别问题属于常见问题还是复杂问题</li></ul>'
+  + '<h4>常见问题处理</h4>'
+  + '<ul><li>账号登录问题</li><li>基础功能使用指导</li><li>常见报错处理</li><li>标准流程咨询</li></ul>'
+  + '<h4>复杂问题识别与转交</h4>'
+  + '<p>超出标准处理范围时（技术性故障、系统异常、需要后台操作、涉及数据核查），收集必要信息后创建工单转交二线。</p>'
+  + '<h3>二线专员职责</h3>'
+  + '<h4>接收工单</h4><p>审核工单，信息不足时联系客服补充。</p>'
+  + '<h4>问题分析与处理</h4>'
+  + '<ul><li>系统日志查询</li><li>数据库核查</li><li>后台数据修正</li><li>系统配置调整</li></ul>'
+  + '<h4>复杂问题升级</h4><p>超出二线处理能力时（系统架构问题、需研发介入），升级至研发/技术团队。</p>'
+  + '<h3>协作要点</h3>'
+  + '<table><tr><th>角色</th><th>✅ 做什么</th><th>❌ 不做什么</th></tr>'
+  + '<tr><td>客服</td><td>快速响应、处理标准化问题、收集完整信息转交、跟进进度</td><td>不擅自承诺技术问题解决时间、不进行后台数据操作</td></tr>'
+  + '<tr><td>二线</td><td>深度技术分析、后台操作、知识库建设、反馈结果</td><td>不直接联系用户、不处理常规咨询、不跳过工单流程</td></tr></table>'
+  + '<h3>关键流程</h3>'
+  + '<p>用户咨询 → 客服接收 → 问题判断</p>'
+  + '<ul><li>常见问题 → 客服直接处理 → 反馈用户 → 结束</li>'
+  + '<li>复杂问题 → 收集信息 → 创建工单 → 转交二线 → 分析处理 → 反馈客服 → 告知用户</li></ul>'
+},
+// ========== 话术模板 ==========
+{
+  id:'art_008', categoryId:'script', title:'退款驳回标准话术库（完整版）',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<table>'
+  + '<tr><th>场景分类</th><th>具体情况</th><th>标准话术</th></tr>'
+  + '<tr><td>订单状态</td><td>已完成订单退款</td><td>亲亲您好，本店目前客服托管中，无法直接给您退款，请申请客服介入，鸭鸭将在10:00-20:00为您处理。</td></tr>'
+  + '<tr><td>订单状态</td><td>骑手已取走退款</td><td>亲亲您好，您的订单骑手已经取走了，无法直接给您退款，如果仍需退款，请申请客服介入。鸭鸭将在10:00-20:00为您处理。</td></tr>'
+  + '<tr><td>质量问题</td><td>商品变质/有异物</td><td>亲亲您好，关于商品质量问题我们非常重视，本店目前客服托管中，请申请客服介入并保留商品及照片，鸭鸭将在10:00-20:00为您妥善处理。</td></tr>'
+  + '<tr><td>质量问题</td><td>口味不好/不新鲜</td><td>亲亲您好，我们的商品都是当日新鲜制作，如有质量问题请申请客服介入，鸭鸭将在10:00-20:00为您核实处理。</td></tr>'
+  + '<tr><td>质量问题</td><td>未收到商品</td><td>亲亲您好，经核实您的订单已完成配送，如有疑问请申请客服介入，鸭鸭将在10:00-20:00为您核实处理。</td></tr>'
+  + '<tr><td>营业状态</td><td>商家打烊/未营业</td><td>亲亲您好，目前小店客服托管中，可支持外卖正常取餐和配送，如果不想要了，请选择用户原因申请哦。</td></tr>'
+  + '<tr><td>营业状态</td><td>商家缺货/卖完了</td><td>亲亲您好，您要的商品都是有的，会正常给您送，如果不想要了，请选择用户原因申请哦。</td></tr>'
+  + '<tr><td>退款原因</td><td>商家原因需改为顾客原因</td><td>亲亲您好，您选择的退款原因不太准确哦。如果您不想要了，请重新申请并选择"我不想要了"作为退款原因，我们会立即为您处理。</td></tr>'
+  + '<tr><td>配送问题</td><td>配送超时</td><td>亲亲您好，您的订单正在配送中，可能因路况原因稍有延迟，骑手会尽快送达。如需退款请申请客服介入，鸭鸭将在10:00-20:00为您处理。</td></tr>'
+  + '<tr><td>配送问题</td><td>送错地址</td><td>亲亲您好，关于配送地址问题请直接联系骑手或平台客服处理，如需退款请申请客服介入，鸭鸭将在10:00-20:00为您处理。</td></tr>'
+  + '</table>'
+},
+// ========== 流程图解 ==========
+{
+  id:'art_009', categoryId:'flow', title:'多付场景处理流程',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>场景一：一眼能确认多付（订单重复支付）</h3>'
+  + '<div class="flow-step"><div class="flow-num">1</div><div class="flow-text">核对多付订单</div></div>'
+  + '<div class="flow-step"><div class="flow-num">2</div><div class="flow-text">操作<strong>退款</strong></div></div>'
+  + '<div class="flow-step"><div class="flow-num">3</div><div class="flow-text">编辑话术 → 上报班长</div></div>'
+  + '<div class="flow-step"><div class="flow-num">4</div><div class="flow-text">班长同步商家</div></div>'
+  + '<h3>场景二：无法确认多付</h3>'
+  + '<p>（分配时已多付 / 多件商品不确认 / 二次进店反馈）</p>'
+  + '<table><tr><th>😊 顾客愿意等</th><th>😤 顾客不愿意等</th></tr>'
+  + '<tr><td>1. 引导顾客离店<br>2. 打标「疑似多付」<br>3. 等待二线处理</td>'
+  + '<td>1. 告知转二线处理<br>2. 群内转交二线专员</td></tr></table>'
+},
+{
+  id:'art_010', categoryId:'flow', title:'售后处理检查清单',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>每次处理退款前必查</h3>'
+  + '<ul><li>☐ 订单状态是否准确？</li><li>☐ 门店群内是否有相关报备？</li><li>☐ 是否属于值守期间可处理范围？</li><li>☐ 同意退款是否已备注"微店"？</li><li>☐ 是否需要在门店群内同步？</li></ul>'
+  + '<h3>每次与顾客沟通后必查</h3>'
+  + '<ul><li>☐ 是否安抚了顾客情绪？</li><li>☐ 是否给出了明确的解决方案或时间节点？</li><li>☐ 是否需要上报班长？</li><li>☐ 是否在系统/群内做了记录？</li></ul>'
+},
+{
+  id:'art_011', categoryId:'aftersale', title:'常见问题FAQ',
+  visibility:'all', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<table><tr><th>问题</th><th>解答</th></tr>'
+  + '<tr><td>顾客说少送了商品，但查不到订单详情？</td><td>先安抚顾客，告知"系统正在查询，请稍等"。然后立即联系班长或技术支持解决系统问题。</td></tr>'
+  + '<tr><td>骑手说取不到货，但监控看不清楚？</td><td>通过对讲询问骑手具体位置和订单号，远程指导。如仍无法解决，主动联系顾客致歉并引导退款。</td></tr>'
+  + '<tr><td>顾客要求赔偿/补偿？</td><td>夜间值守无权承诺任何补偿，统一话术："您的诉求我已详细记录，会上报主管，明天白班会有专人联系您协商解决方案。"</td></tr>'
+  + '<tr><td>同一顾客连续多次退款？</td><td>不能直接拒绝，但需上报班长。按正常流程处理，同时在系统备注"该顾客频繁退款，请关注"。</td></tr>'
+  + '<tr><td>门店群内商家说"不同意退款"？</td><td>如果是值守期间可处理的场景，按SOP执行并在群内解释原因。如商家坚持不同意，上报班长协调。</td></tr></table>'
+},
+// ========== 培训考核 ==========
+{
+  id:'art_012', categoryId:'training', title:'售后数据记录与复盘要求',
+  visibility:'trainer', version:1, updatedAt:'2024-04-20', updatedBy:'admin',
+  content: '<h3>每日必记录信息</h3>'
+  + '<ul><li>处理退款总数（同意/驳回）</li><li>主动发起售后次数（骑手未找到货等）</li><li>顾客投诉/情绪激动案例</li><li>上报班长的异常订单</li><li>门店设备异常导致的售后</li></ul>'
+  + '<h3>交接班重点</h3>'
+  + '<ul><li>引导白班处理的订单号及原因</li><li>顾客情绪激动/威胁投诉的案例</li><li>疑似恶意退款的顾客信息</li><li>门店设备异常情况</li></ul>'
+  + '<h3>效率提升建议</h3>'
+  + '<h4>对客服</h4>'
+  + '<ol><li>建立常见问题快速查询手册</li><li>转交工单时信息务必完整</li><li>定期学习二线反馈的典型案例</li></ol>'
+  + '<h4>对二线</h4>'
+  + '<ol><li>及时更新知识库，减少重复问题</li><li>向客服同步常见问题的处理方法</li><li>建立问题分类标签，提升工单处理效率</li></ol>'
+}
+];
+
+// ===== 知识库应用主逻辑 =====
+(function(){
+'use strict';
+
+// ===== 数据持久化 =====
+const STORE_KEYS = { users:'kb_users', categories:'kb_categories', articles:'kb_articles', history:'kb_history' };
+
+function loadStore(key, defaults) {
+  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : JSON.parse(JSON.stringify(defaults)); }
+  catch(e) { return JSON.parse(JSON.stringify(defaults)); }
+}
+function saveStore(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+let users = loadStore(STORE_KEYS.users, DEFAULT_USERS);
+let categories = loadStore(STORE_KEYS.categories, DEFAULT_CATEGORIES);
+let articles = loadStore(STORE_KEYS.articles, DEFAULT_ARTICLES);
+let history = loadStore(STORE_KEYS.history, []);
+
+function persist() {
+  saveStore(STORE_KEYS.users, users);
+  saveStore(STORE_KEYS.categories, categories);
+  saveStore(STORE_KEYS.articles, articles);
+  saveStore(STORE_KEYS.history, history);
+}
+
+// ===== 会话 =====
+let currentUser = null;
+let currentPage = 'home';
+let currentArticleId = null;
+
+function hasPerm(perm) {
+  if (!currentUser) return false;
+  return (ROLE_PERMS[currentUser.role] || []).includes(perm);
+}
+
+function canViewArticle(art) {
+  if (!currentUser) return false;
+  if (art.visibility === 'all') return true;
+  if (art.visibility === 'trainer' && (currentUser.role === 'trainer' || currentUser.role === 'admin')) return true;
+  if (art.visibility === 'admin' && currentUser.role === 'admin') return true;
+  return false;
+}
+
+// ===== 登录 =====
+window.doLogin = function() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPwd').value.trim();
+  const found = users.find(x => x.username === u && x.password === p);
+  if (!found) { document.getElementById('loginError').textContent = '用户名或密码错误'; return; }
+  currentUser = found;
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'flex';
+  renderApp();
+};
+
+window.doLogout = function() {
+  currentUser = null;
+  currentPage = 'home';
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginError').textContent = '';
+};
+
+// ===== 渲染 =====
+function renderApp() {
+  renderUserBadge();
+  renderSidebar();
+  renderContent();
+}
+
+function renderUserBadge() {
+  const el = document.getElementById('userBadge');
+  el.textContent = currentUser.name + ' (' + ROLE_LABELS[currentUser.role] + ')';
+  el.className = 'user-badge ' + currentUser.role;
+}
+
+function renderSidebar() {
+  let html = '';
+  // 首页
+  html += '<div class="nav-item' + (currentPage === 'home' ? ' active' : '') + '" onclick="navTo(\'home\')">'
+    + '<span class="nav-icon">🏠</span>首页</div>';
+  // 搜索
+  html += '<div class="nav-item' + (currentPage === 'search' ? ' active' : '') + '" onclick="navTo(\'search\')">'
+    + '<span class="nav-icon">🔍</span>搜索</div>';
+  html += '<div class="nav-divider"></div>';
+
+  // 分类
+  categories.sort((a,b) => a.order - b.order).forEach(cat => {
+    const catArticles = articles.filter(a => a.categoryId === cat.id && canViewArticle(a));
+    if (catArticles.length === 0) return;
+    html += '<div class="nav-category"><div class="nav-category-title">' + cat.icon + ' ' + cat.name + '</div></div>';
+    catArticles.forEach(art => {
+      const active = currentPage === 'article' && currentArticleId === art.id;
+      html += '<div class="nav-item' + (active ? ' active' : '') + '" onclick="navToArticle(\'' + art.id + '\')">'
+        + '<span class="nav-icon">📄</span>' + art.title + '</div>';
+    });
+  });
+
+  // 管理入口
+  if (hasPerm('edit') || hasPerm('manage_users')) {
+    html += '<div class="nav-divider"></div>';
+    html += '<div class="nav-item admin-only' + (currentPage === 'admin' ? ' active' : '') + '" onclick="navTo(\'admin\')">'
+      + '<span class="nav-icon">⚙️</span>后台管理</div>';
+  }
+
+  document.getElementById('sidebarNav').innerHTML = html;
+}
+
+function renderContent() {
+  const el = document.getElementById('contentArea');
+  if (currentPage === 'home') el.innerHTML = renderHome();
+  else if (currentPage === 'search') el.innerHTML = renderSearch();
+  else if (currentPage === 'article') el.innerHTML = renderArticle();
+  else if (currentPage === 'admin') el.innerHTML = renderAdmin();
+}
+
+// ===== 首页 =====
+function renderHome() {
+  const visibleArticles = articles.filter(a => canViewArticle(a));
+  const catCount = new Set(visibleArticles.map(a => a.categoryId)).size;
+  let html = '<div class="page-title">欢迎回来，' + currentUser.name + '</div>'
+    + '<div class="page-desc">周黑鸭24小时值守团队知识库</div>';
+
+  html += '<div class="stats-grid">'
+    + '<div class="stat-card"><div class="stat-num orange">' + visibleArticles.length + '</div><div class="stat-label">知识文档</div></div>'
+    + '<div class="stat-card"><div class="stat-num red">' + catCount + '</div><div class="stat-label">知识分类</div></div>'
+    + '<div class="stat-card"><div class="stat-num blue">' + history.length + '</div><div class="stat-label">更新记录</div></div>'
+    + '<div class="stat-card"><div class="stat-num green">' + users.length + '</div><div class="stat-label">系统用户</div></div>'
+    + '</div>';
+
+  html += '<div class="card"><h2>📚 快速导航</h2><div class="quick-links">';
+  categories.forEach(cat => {
+    const count = articles.filter(a => a.categoryId === cat.id && canViewArticle(a)).length;
+    if (count === 0) return;
+    html += '<div class="quick-link" onclick="navToCategory(\'' + cat.id + '\')">'
+      + '<div class="ql-icon">' + cat.icon + '</div>'
+      + '<div><div class="ql-text">' + cat.name + '</div><div class="ql-desc">' + count + ' 篇文档</div></div></div>';
+  });
+  html += '</div></div>';
+
+  // 最近更新
+  const recent = [...visibleArticles].sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 5);
+  if (recent.length) {
+    html += '<div class="card"><h2>🕐 最近更新</h2>';
+    recent.forEach(art => {
+      const cat = categories.find(c => c.id === art.categoryId);
+      html += '<div style="padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;" onclick="navToArticle(\'' + art.id + '\')">'
+        + '<div style="font-size:14px;font-weight:600;color:#333;">' + art.title + '</div>'
+        + '<div style="font-size:12px;color:#999;margin-top:4px;">' + (cat ? cat.icon + ' ' + cat.name : '') + ' · ' + art.updatedAt + ' · v' + art.version + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+// ===== 搜索 =====
+function renderSearch() {
+  return '<div class="page-title">🔍 搜索知识库</div>'
+    + '<div class="search-bar"><input type="text" id="searchInput" placeholder="输入关键词搜索..." oninput="doSearch()"></div>'
+    + '<div id="searchResults"></div>';
+}
+
+window.doSearch = function() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if (!q) { el.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">输入关键词开始搜索</div>'; return; }
+
+  const results = articles.filter(a => canViewArticle(a) && (
+    a.title.toLowerCase().includes(q) || a.content.replace(/<[^>]+>/g, '').toLowerCase().includes(q)
+  ));
+
+  if (!results.length) { el.innerHTML = '<div style="text-align:center;color:#999;padding:40px;">未找到相关内容</div>'; return; }
+
+  let html = '';
+  results.forEach(art => {
+    const cat = categories.find(c => c.id === art.categoryId);
+    const plain = art.content.replace(/<[^>]+>/g, '');
+    const idx = plain.toLowerCase().indexOf(q);
+    let snippet = '';
+    if (idx >= 0) {
+      const start = Math.max(0, idx - 40);
+      const end = Math.min(plain.length, idx + q.length + 60);
+      snippet = (start > 0 ? '...' : '') + plain.substring(start, end).replace(new RegExp(q, 'gi'), '<mark>$&</mark>') + (end < plain.length ? '...' : '');
+    }
+    html += '<div class="search-result-item" onclick="navToArticle(\'' + art.id + '\')">'
+      + '<div class="sr-title">' + art.title.replace(new RegExp(q, 'gi'), '<mark>$&</mark>') + '</div>'
+      + '<div class="sr-cat">' + (cat ? cat.icon + ' ' + cat.name : '') + '</div>'
+      + (snippet ? '<div class="sr-snippet">' + snippet + '</div>' : '')
+      + '</div>';
+  });
+  el.innerHTML = html;
+};
+
+// ===== 文章详情 =====
+function renderArticle() {
+  const art = articles.find(a => a.id === currentArticleId);
+  if (!art) return '<div class="card">文章不存在</div>';
+  const cat = categories.find(c => c.id === art.categoryId);
+
+  let html = '<div class="page-title">' + art.title + '</div>'
+    + '<div class="page-desc">' + (cat ? cat.icon + ' ' + cat.name : '') + ' · 更新于 ' + art.updatedAt + ' · 版本 v' + art.version
+    + (art.visibility !== 'all' ? ' · <span class="role-tag ' + art.visibility + '">' + (art.visibility === 'trainer' ? '培训师+' : '管理员') + '</span>' : '')
+    + '</div>';
+
+  if (hasPerm('edit')) {
+    html += '<div style="margin-bottom:16px;">'
+      + '<button class="btn-add" onclick="openEditArticle(\'' + art.id + '\')">✏️ 编辑</button> '
+      + '<button class="btn-sm btn-outline" onclick="showArticleHistory(\'' + art.id + '\')">📜 版本历史</button>'
+      + '</div>';
+  }
+
+  html += '<div class="card">' + art.content + '</div>';
+  return html;
+}
+
+// ===== 后台管理 =====
+function renderAdmin() {
+  if (!hasPerm('edit') && !hasPerm('manage_users')) return '<div class="card">无权限</div>';
+
+  let html = '<div class="page-title">⚙️ 后台管理</div><div class="page-desc">管理知识库内容、用户和分类</div>';
+
+  // 文章管理
+  html += '<div class="card"><h2>📄 文章管理 <button class="btn-add" style="float:right;font-size:12px;" onclick="openEditArticle()">➕ 新增文章</button></h2>';
+  html += '<table class="admin-table"><tr><th>标题</th><th>分类</th><th>可见范围</th><th>版本</th><th>更新时间</th><th>操作</th></tr>';
+  articles.forEach(art => {
+    const cat = categories.find(c => c.id === art.categoryId);
+    const visLabel = art.visibility === 'all' ? '全员' : art.visibility === 'trainer' ? '培训师+' : '管理员';
+    html += '<tr><td>' + art.title + '</td><td>' + (cat ? cat.icon + ' ' + cat.name : '-') + '</td>'
+      + '<td><span class="role-tag ' + art.visibility + '">' + visLabel + '</span></td>'
+      + '<td>v' + art.version + '</td><td>' + art.updatedAt + '</td>'
+      + '<td><button class="btn-xs btn-edit" onclick="openEditArticle(\'' + art.id + '\')">编辑</button> '
+      + '<button class="btn-xs btn-hist" onclick="showArticleHistory(\'' + art.id + '\')">历史</button> '
+      + (hasPerm('delete') ? '<button class="btn-xs btn-del" onclick="deleteArticle(\'' + art.id + '\')">删除</button>' : '')
+      + '</td></tr>';
+  });
+  html += '</table></div>';
+
+  // 用户管理（仅管理员）
+  if (hasPerm('manage_users')) {
+    html += '<div class="card"><h2>👥 用户管理 <button class="btn-add" style="float:right;font-size:12px;" onclick="openEditUser()">➕ 新增用户</button></h2>';
+    html += '<table class="user-table"><tr><th>用户名</th><th>姓名</th><th>角色</th><th>操作</th></tr>';
+    users.forEach((u, i) => {
+      html += '<tr><td>' + u.username + '</td><td>' + u.name + '</td>'
+        + '<td><span class="role-tag ' + u.role + '">' + ROLE_LABELS[u.role] + '</span></td>'
+        + '<td><button class="btn-xs btn-edit" onclick="openEditUser(' + i + ')">编辑</button> '
+        + (u.username !== 'admin' ? '<button class="btn-xs btn-del" onclick="deleteUser(' + i + ')">删除</button>' : '')
+        + '</td></tr>';
+    });
+    html += '</table></div>';
+  }
+
+  // 更新日志
+  html += '<div class="card"><h2>📜 更新日志（最近20条）</h2>';
+  if (history.length === 0) {
+    html += '<div style="text-align:center;color:#999;padding:20px;">暂无记录</div>';
+  } else {
+    const recent = history.slice(-20).reverse();
+    recent.forEach(h => {
+      html += '<div class="history-item">'
+        + '<div class="history-meta"><span>📅 ' + h.time + '</span><span>👤 ' + h.user + '</span>'
+        + '<span class="history-action ' + h.action + '">' + ({create:'新增',update:'更新','delete':'删除'}[h.action] || h.action) + '</span></div>'
+        + '<div style="font-size:13px;color:#555;">' + h.detail + '</div></div>';
+    });
+  }
+  html += '</div>';
+
+  return html;
+}
+
+// ===== 导航 =====
+window.navTo = function(page) { currentPage = page; currentArticleId = null; renderSidebar(); renderContent(); closeSidebar(); };
+window.navToArticle = function(id) { currentPage = 'article'; currentArticleId = id; renderSidebar(); renderContent(); closeSidebar(); };
+window.navToCategory = function(catId) {
+  const first = articles.find(a => a.categoryId === catId && canViewArticle(a));
+  if (first) navToArticle(first.id);
+};
+window.toggleSidebar = function() { document.getElementById('sidebar').classList.toggle('open'); };
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+// ===== 编辑文章 =====
+window.openEditArticle = function(id) {
+  const art = id ? articles.find(a => a.id === id) : null;
+  const isNew = !art;
+  document.getElementById('editModalTitle').textContent = isNew ? '新增文章' : '编辑文章';
+
+  let catOpts = categories.map(c => '<option value="' + c.id + '"' + (art && art.categoryId === c.id ? ' selected' : '') + '>' + c.icon + ' ' + c.name + '</option>').join('');
+  let visOpts = '<option value="all"' + (art && art.visibility === 'all' ? ' selected' : '') + '>全员可见</option>'
+    + '<option value="trainer"' + (art && art.visibility === 'trainer' ? ' selected' : '') + '>培训师+管理员</option>'
+    + '<option value="admin"' + (art && art.visibility === 'admin' ? ' selected' : '') + '>仅管理员</option>';
+
+  document.getElementById('editModalBody').innerHTML =
+    '<div class="editor-group"><label>标题</label><input type="text" id="editTitle" value="' + (art ? art.title.replace(/"/g, '&quot;') : '') + '"></div>'
+    + '<div class="editor-group"><label>分类</label><select id="editCategory">' + catOpts + '</select></div>'
+    + '<div class="editor-group"><label>可见范围</label><select id="editVisibility">' + visOpts + '</select></div>'
+    + '<div class="editor-group"><label>内容（支持HTML）</label><textarea id="editContent">' + (art ? art.content.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '') + '</textarea></div>'
+    + '<div style="display:flex;gap:10px;margin-top:16px;">'
+    + '<button class="btn-primary" onclick="saveArticle(\'' + (id || '') + '\')">保存</button>'
+    + '<button class="btn-sm btn-outline" onclick="closeEditModal()">取消</button></div>';
+
+  document.getElementById('editModal').classList.add('show');
+};
+
+window.saveArticle = function(id) {
+  const title = document.getElementById('editTitle').value.trim();
+  const categoryId = document.getElementById('editCategory').value;
+  const visibility = document.getElementById('editVisibility').value;
+  const content = document.getElementById('editContent').value
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+  if (!title) { alert('请填写标题'); return; }
+  if (!content) { alert('请填写内容'); return; }
+
+  const now = new Date().toISOString().slice(0, 10);
+
+  if (id) {
+    const art = articles.find(a => a.id === id);
+    if (art) {
+      // 保存旧版本到历史
+      history.push({
+        time: new Date().toLocaleString('zh-CN'),
+        user: currentUser.name,
+        action: 'update',
+        detail: '更新文章：' + art.title + ' (v' + art.version + ' → v' + (art.version + 1) + ')',
+        articleId: art.id,
+        oldContent: art.content,
+        oldTitle: art.title,
+        version: art.version
+      });
+      art.title = title;
+      art.categoryId = categoryId;
+      art.visibility = visibility;
+      art.content = content;
+      art.version++;
+      art.updatedAt = now;
+      art.updatedBy = currentUser.username;
+    }
+  } else {
+    const newArt = {
+      id: 'art_' + Date.now(),
+      categoryId, title, visibility, content,
+      version: 1, updatedAt: now, updatedBy: currentUser.username
+    };
+    articles.push(newArt);
+    history.push({
+      time: new Date().toLocaleString('zh-CN'),
+      user: currentUser.name,
+      action: 'create',
+      detail: '新增文章：' + title,
+      articleId: newArt.id,
+      version: 1
+    });
+  }
+
+  persist();
+  closeEditModal();
+  renderApp();
+};
+
+window.deleteArticle = function(id) {
+  const art = articles.find(a => a.id === id);
+  if (!art || !confirm('确定删除"' + art.title + '"？')) return;
+  history.push({
+    time: new Date().toLocaleString('zh-CN'),
+    user: currentUser.name,
+    action: 'delete',
+    detail: '删除文章：' + art.title,
+    articleId: art.id,
+    version: art.version
+  });
+  articles = articles.filter(a => a.id !== id);
+  persist();
+  if (currentArticleId === id) { currentPage = 'home'; currentArticleId = null; }
+  renderApp();
+};
+
+// ===== 版本历史 =====
+window.showArticleHistory = function(id) {
+  const art = articles.find(a => a.id === id);
+  const artHistory = history.filter(h => h.articleId === id).reverse();
+  let html = '<div style="font-size:15px;font-weight:600;margin-bottom:16px;">' + (art ? art.title : '已删除') + '</div>';
+  if (!artHistory.length) {
+    html += '<div style="text-align:center;color:#999;padding:20px;">暂无历史记录</div>';
+  } else {
+    artHistory.forEach(h => {
+      html += '<div class="history-item">'
+        + '<div class="history-meta"><span>📅 ' + h.time + '</span><span>👤 ' + h.user + '</span>'
+        + '<span class="history-action ' + h.action + '">' + ({create:'新增',update:'更新','delete':'删除'}[h.action] || h.action) + '</span></div>'
+        + '<div style="font-size:13px;color:#555;">' + h.detail + '</div>';
+      if (h.oldContent) {
+        html += '<details style="margin-top:8px;"><summary style="font-size:12px;color:#999;cursor:pointer;">查看旧版内容</summary>'
+          + '<div style="background:#f8f8f8;padding:12px;border-radius:6px;margin-top:6px;font-size:13px;max-height:200px;overflow-y:auto;">'
+          + h.oldContent + '</div></details>';
+      }
+      html += '</div>';
+    });
+  }
+  document.getElementById('historyModalBody').innerHTML = html;
+  document.getElementById('historyModal').classList.add('show');
+};
+
+window.closeHistoryModal = function() { document.getElementById('historyModal').classList.remove('show'); };
+
+// ===== 用户管理 =====
+window.openEditUser = function(index) {
+  const u = typeof index === 'number' ? users[index] : null;
+  const isNew = !u;
+  document.getElementById('modalTitle').textContent = isNew ? '新增用户' : '编辑用户';
+
+  let roleOpts = Object.entries(ROLE_LABELS).map(([k,v]) =>
+    '<option value="' + k + '"' + (u && u.role === k ? ' selected' : '') + '>' + v + '</option>'
+  ).join('');
+
+  document.getElementById('modalBody').innerHTML =
+    '<div class="editor-group"><label>用户名</label><input type="text" id="editUsername" value="' + (u ? u.username : '') + '"' + (u ? ' readonly style="background:#f0f0f0;"' : '') + '></div>'
+    + '<div class="editor-group"><label>姓名</label><input type="text" id="editName" value="' + (u ? u.name : '') + '"></div>'
+    + '<div class="editor-group"><label>密码</label><input type="text" id="editPassword" value="' + (u ? u.password : '') + '"></div>'
+    + '<div class="editor-group"><label>角色</label><select id="editRole">' + roleOpts + '</select></div>'
+    + '<div style="display:flex;gap:10px;margin-top:16px;">'
+    + '<button class="btn-primary" onclick="saveUser(' + (typeof index === 'number' ? index : -1) + ')">保存</button>'
+    + '<button class="btn-sm btn-outline" onclick="closeModal()">取消</button></div>';
+
+  document.getElementById('adminModal').classList.add('show');
+};
+
+window.saveUser = function(index) {
+  const username = document.getElementById('editUsername').value.trim();
+  const name = document.getElementById('editName').value.trim();
+  const password = document.getElementById('editPassword').value.trim();
+  const role = document.getElementById('editRole').value;
+  if (!username || !name || !password) { alert('请填写完整信息'); return; }
+
+  if (index >= 0) {
+    users[index].name = name;
+    users[index].password = password;
+    users[index].role = role;
+  } else {
+    if (users.find(u => u.username === username)) { alert('用户名已存在'); return; }
+    users.push({ username, password, role, name });
+  }
+  persist();
+  closeModal();
+  renderApp();
+};
+
+window.deleteUser = function(index) {
+  if (!confirm('确定删除用户"' + users[index].name + '"？')) return;
+  users.splice(index, 1);
+  persist();
+  renderApp();
+};
+
+// ===== 弹窗 =====
+window.closeModal = function() { document.getElementById('adminModal').classList.remove('show'); };
+window.closeEditModal = function() { document.getElementById('editModal').classList.remove('show'); };
+
+// ===== 键盘快捷键 =====
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal(); closeEditModal(); closeHistoryModal();
+  }
+});
+
+// ===== 初始化 =====
+// 检查 Enter 登录
+document.getElementById('loginUser').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+})();
+</script>
+</body>
+</html>

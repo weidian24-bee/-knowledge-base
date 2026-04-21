@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>值守一组专用话术模版生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei"; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 15px; padding: 30px; }
+        h1 { color: #667eea; text-align: center; margin-bottom: 25px; font-size: 22px; }
+
+        /* 密码锁屏 */
+        #lockScreen { position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display:flex; align-items:center; justify-content:center; z-index:9999; }
+        .lock-box { background:white; border-radius:15px; padding:40px; text-align:center; width:320px; box-shadow:0 10px 40px rgba(0,0,0,0.2); }
+        .lock-box h2 { color:#667eea; margin-bottom:8px; font-size:20px; }
+        .lock-box p { color:#888; font-size:13px; margin-bottom:20px; }
+        .lock-box input { width:100%; padding:12px; border:2px solid #ddd; border-radius:8px; font-size:16px; text-align:center; letter-spacing:4px; outline:none; font-family:"Microsoft YaHei"; }
+        .lock-box input:focus { border-color:#667eea; }
+        .lock-box button { width:100%; margin-top:15px; padding:12px; background:#667eea; color:white; border:none; border-radius:8px; font-size:15px; cursor:pointer; font-family:"Microsoft YaHei"; }
+        .lock-box button:hover { background:#5568d3; }
+        .lock-error { color:#f44336; font-size:13px; margin-top:10px; min-height:20px; }
+
+        .template-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .tab { padding: 8px 16px; border: 2px solid #ddd; border-radius: 20px; cursor: pointer; font-size: 13px; color: #666; background: white; transition: all 0.2s; }
+        .tab:hover { border-color: #667eea; color: #667eea; }
+        .tab.active { border-color: #667eea; background: #667eea; color: white; }
+
+        .form-section { background: #f8f9fa; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .form-section h2 { color: #667eea; font-size: 15px; margin-bottom: 15px; }
+        .form-row { margin-bottom: 12px; }
+        .form-row label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: bold; }
+        .form-row input, .form-row textarea, .form-row select { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: "Microsoft YaHei"; }
+        .form-row textarea { resize: vertical; min-height: 70px; }
+        .form-row input:focus, .form-row textarea:focus { outline: none; border-color: #667eea; }
+
+        .btn { background: #667eea; color: white; padding: 10px 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: "Microsoft YaHei"; }
+        .btn:hover { background: #5568d3; }
+        .btn-copy { background: #4caf50; margin-left: 10px; }
+        .btn-copy:hover { background: #388e3c; }
+        .btn-copy.copied { background: #888; }
+        .btn-gray { background: #888; }
+        .btn-gray:hover { background: #666; }
+        .btn-danger { background: #f44336; }
+        .btn-danger:hover { background: #d32f2f; }
+
+        .result-section { margin-top: 20px; }
+        .result-section h2 { color: #667eea; font-size: 15px; margin-bottom: 10px; }
+        .result-box { background: #f0f4ff; border: 1px solid #c5d0f5; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.8; white-space: pre-wrap; word-break: break-all; min-height: 80px; color: #333; }
+        .result-actions { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+
+        /* 管理员按钮 */
+        #adminEntryBtn { position: fixed; bottom: 25px; right: 25px; width: 48px; height: 48px; background: rgba(102,126,234,0.85); color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 3px 12px rgba(0,0,0,0.2); z-index: 100; }
+        #adminEntryBtn:hover { background: #667eea; }
+
+        /* 弹窗通用 */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-box { background: white; border-radius: 15px; padding: 30px; width: 92%; max-width: 680px; max-height: 88vh; overflow-y: auto; }
+        .modal-box h2 { color: #667eea; font-size: 18px; margin-bottom: 20px; }
+        .modal-actions { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* 后台场景列表 */
+        .scene-list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; }
+        .scene-list-item span { font-size: 14px; color: #333; flex: 1; }
+        .scene-list-item .item-btns { display: flex; gap: 8px; }
+        .scene-list-item .item-btns button { padding: 5px 14px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; font-family: "Microsoft YaHei"; }
+
+        /* 字段编辑表格 */
+        .field-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 13px; }
+        .field-table th { background: #667eea; color: white; padding: 8px; text-align: left; }
+        .field-table td { padding: 6px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .field-table input { width: 100%; padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: "Microsoft YaHei"; }
+        .field-table select { padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: "Microsoft YaHei"; }
+        .add-field-btn { font-size: 12px; padding: 5px 14px; background: #4caf50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px; font-family: "Microsoft YaHei"; }
+
+        .tip-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 10px 14px; border-radius: 4px; font-size: 12px; color: #1565c0; margin-bottom: 12px; line-height: 1.7; }
+    </style>
+</head>
+<body>
+
+<!-- 前台密码锁屏 -->
+<div id="lockScreen">
+    <div class="lock-box">
+        <h2>🔒 请输入访问密码</h2>
+        <p>话术模版生成器</p>
+        <input type="password" id="pwdInput" placeholder="请输入密码" onkeydown="if(event.key==='Enter')checkPwd()">
+        <button onclick="checkPwd()">确认</button>
+        <div class="lock-error" id="lockError"></div>
+    </div>
+</div>
+
+<div class="container">
+    <h1>💬 值守一组专用话术模版生成器</h1>
+    <div class="template-tabs" id="templateTabs"></div>
+    <div class="form-section">
+        <h2 id="formTitle"></h2>
+        <div id="formFields"></div>
+        <button class="btn" onclick="generate()">生成话术</button>
+        <button class="btn btn-gray" onclick="clearForm()" style="margin-left:10px;">清空</button>
+    </div>
+    <div class="result-section" id="resultSection" style="display:none;">
+        <h2>生成结果</h2>
+        <div class="result-box" id="resultBox"></div>
+        <div class="result-actions">
+            <button class="btn btn-copy" id="copyBtn" onclick="copyResult()">📋 一键复制</button>
+            <span id="copyTip" style="font-size:12px;color:#888;"></span>
+        </div>
+    </div>
+</div>
+
+<!-- 管理员入口按钮 -->
+<button id="adminEntryBtn" onclick="showAdminLogin()" title="后台管理">⚙️</button>
+
+<!-- 管理员登录弹窗 -->
+<div class="modal" id="adminLoginModal">
+    <div class="modal-box" style="max-width:320px;text-align:center;">
+        <h2>🔐 管理员登录</h2>
+        <div class="form-row">
+            <input type="password" id="adminPwdInput" placeholder="请输入管理员密码" onkeydown="if(event.key==='Enter')checkAdminLogin()" style="text-align:center;letter-spacing:4px;">
+        </div>
+        <div class="lock-error" id="adminLoginError"></div>
+        <div class="modal-actions" style="justify-content:center;">
+            <button class="btn" onclick="checkAdminLogin()">登录</button>
+            <button class="btn btn-gray" onclick="closeModal('adminLoginModal')">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 后台主面板 -->
+<div class="modal" id="adminPanel">
+    <div class="modal-box">
+        <h2>⚙️ 后台管理</h2>
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+            <button class="btn" onclick="showAddScene()">➕ 添加场景</button>
+            <button class="btn btn-gray" onclick="showChangePwd()">🔑 修改密码</button>
+            <button class="btn btn-gray" style="margin-left:auto;" onclick="closeModal('adminPanel')">关闭</button>
+        </div>
+        <div id="adminSceneList"></div>
+    </div>
+</div>
+
+<!-- 添加/编辑场景弹窗 -->
+<div class="modal" id="editSceneModal">
+    <div class="modal-box">
+        <h2 id="editSceneTitle">添加场景</h2>
+        <div class="form-row">
+            <label>场景名称</label>
+            <input type="text" id="sceneNameInput" placeholder="例：⑩ 漏付处理">
+        </div>
+        <div class="form-row">
+            <label>字段配置</label>
+            <div class="tip-box">每行为一个输入字段，填写后在话术模板中用 <b>{字段key}</b> 引用。</div>
+            <button class="add-field-btn" onclick="addFieldRow()">＋ 添加字段</button>
+            <table class="field-table">
+                <thead><tr><th>字段key</th><th>显示标签</th><th>占位提示</th><th>默认值</th><th>必填</th><th></th></tr></thead>
+                <tbody id="fieldTableBody"></tbody>
+            </table>
+        </div>
+        <div class="form-row">
+            <label>话术模板</label>
+            <div class="tip-box">用 {字段key} 作为占位符，生成时自动替换为填写内容。<br>例：商家您好，顾客购买{goods}{amount}，请核实。</div>
+            <textarea id="sceneTemplate" rows="6" placeholder="输入话术模板内容，用{字段key}占位"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="saveScene()">保存</button>
+            <button class="btn btn-gray" onclick="closeModal('editSceneModal')">取消</button>
+            <button class="btn btn-danger" id="deleteSceneBtn" onclick="deleteScene()" style="display:none;">删除场景</button>
+        </div>
+    </div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div class="modal" id="changePwdModal">
+    <div class="modal-box" style="max-width:400px;">
+        <h2>🔑 修改密码</h2>
+        <div class="form-row">
+            <label>前台访问密码（当前：<span id="showFrontPwd"></span>）</label>
+            <input type="text" id="newFrontPwd" placeholder="留空则不修改">
+        </div>
+        <div class="form-row">
+            <label>管理员密码（当前：<span id="showAdminPwd"></span>）</label>
+            <input type="text" id="newAdminPwd" placeholder="留空则不修改">
+        </div>
+        <div class="modal-actions">
+            <button class="btn" onclick="savePwd()">保存</button>
+            <button class="btn btn-gray" onclick="closeModal('changePwdModal')">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== 数据层 =====
+const DEFAULT_FRONT_PWD = 'yizuwudi';
+const DEFAULT_ADMIN_PWD = 'yizuwudi';
+
+function getFrontPwd() { return localStorage.getItem('frontPwd') || DEFAULT_FRONT_PWD; }
+function getAdminPwd() { return localStorage.getItem('adminPwd') || DEFAULT_ADMIN_PWD; }
+
+function loadScenes() {
+    const saved = localStorage.getItem('huashuScenes');
+    if (saved) return JSON.parse(saved);
+    return getDefaultScenes();
+}
+
+function saveScenes(s) { localStorage.setItem('huashuScenes', JSON.stringify(s)); }
+
+function getDefaultScenes() {
+    return [
+        { id:3, name:'③ 多付（退款已发起）', template:'__BUILTIN_3__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'购买商品',placeholder:'例：矿泉水 或 水',defaultVal:''},
+            {key:'shouldPay',label:'应付金额',placeholder:'例：2元 或 2',defaultVal:''},
+            {key:'actualPay',label:'实付金额',placeholder:'例：4元 或 4',defaultVal:''},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:4, name:'④ 多付（特殊情况）', template:'__BUILTIN_4__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'购买商品',placeholder:'例：商品合计 或 矿泉水',defaultVal:''},
+            {key:'shouldPay',label:'应付金额',placeholder:'例：15元 或 15',defaultVal:''},
+            {key:'actualPay',label:'实付金额',placeholder:'例：30元 或 30',defaultVal:''},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:5, name:'⑤ 扫商家码（已pos付款）', template:'__BUILTIN_5__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'购买商品',placeholder:'例：商品 或 矿泉水',defaultVal:''},
+            {key:'amount',label:'商品金额',placeholder:'例：12元 或 12',defaultVal:''},
+            {key:'repeatAmount',label:'重复付款金额（选填）',placeholder:'不填则与商品金额相同',defaultVal:''},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:6, name:'⑥ 未成年人退款', template:'__BUILTIN_6__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'购买商品',placeholder:'例：香烟1盒',defaultVal:'香烟'},
+            {key:'amount',label:'商品金额（选填）',placeholder:'例：20元 或 20',defaultVal:''},
+            {key:'handle',label:'商品已处理情况（选填）',placeholder:'例：香烟已放回至烟柜',defaultVal:'香烟已放回至烟柜'},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:7, name:'⑦ 扫商家码（未pos付款）', template:'__BUILTIN_7__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'购买商品',placeholder:'例：水 或 矿泉水',defaultVal:''},
+            {key:'amount',label:'付款金额',placeholder:'例：1元 或 1',defaultVal:''},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:8, name:'⑧ 异常·顾客打碎商品', template:'__BUILTIN_8__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'goods',label:'打碎商品（选填）',placeholder:'例：矿泉水',defaultVal:''},
+            {key:'amount',label:'商品金额（选填）',placeholder:'例：5元 或 5',defaultVal:''},
+            {key:'time',label:'发生时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]},
+        { id:9, name:'⑨ 异常·骑手未取货离店', template:'__BUILTIN_9__', fields:[
+            {key:'storeId',label:'店铺ID',placeholder:'例：123456',defaultVal:'',required:true},
+            {key:'time',label:'骑手进店时间（选填）',placeholder:'例：2026-04-01 14:32',defaultVal:''},
+            {key:'orderNo',label:'订单编号（选填）',placeholder:'例：123456789',defaultVal:''},
+            {key:'riderPhone',label:'骑手手机号（选填）',placeholder:'例：138****8888',defaultVal:''},
+            {key:'phone',label:'顾客手机号（选填）',placeholder:'例：138****8888',defaultVal:''}
+        ]}
+    ];
+}
+
+// ===== 内置话术生成逻辑 =====
+function builtinGenerate(id, f) {
+    const fmt = (amt) => { if(!amt) return ''; const a=amt.trim(); return a.includes('元')?a:a+'元'; };
+    const orderInfo = (f) => { let p=[]; if(f.orderNo) p.push('订单号：'+f.orderNo); if(f.phone) p.push('手机号：'+f.phone); return p.length?'（'+p.join('，')+'）':''; };
+    const goodsFmt = (g) => { if(!g) return '商品'; const t=g.trim(); return t==='水'?'矿泉水':t; };
+
+    if(id===3||id===4) {
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='商家您好，';
+        if(f.time) msg+=f.time+'，';
+        msg+='顾客购买'+goodsFmt(f.goods);
+        if(f.shouldPay) msg+=fmt(f.shouldPay);
+        if(f.actualPay) msg+='，实际支付'+fmt(f.actualPay);
+        if(f.shouldPay&&f.actualPay){const s=parseFloat(f.shouldPay),a=parseFloat(f.actualPay);if(!isNaN(s)&&!isNaN(a)&&a>s)msg+='，多付'+(a-s)+'元';}
+        msg+=orderInfo(f);
+        if(id===3){
+            msg+='，客服侧已发起退款，退款发起后24h系统将自动退款，辛苦您确认，无异常请点击同意退款，如有异常情况请在退款发起24h内及时点击拒绝退款。\n▸ 如何查看异常回放及退款详情：\n请打开微店APP，进入首页：\n【订单/出入】- 搜索订单编号'+(f.orderNo?'（'+f.orderNo+'）':'')+'→ 查看视频回放及查看订单信息 → 确认后点击【待商家处理退款】→ 点击【同意退款】/【拒绝退款】，如有任何问题可以随时联系服务管家，竭诚为您服务。';
+        } else {
+            msg+='，已和买家承诺48小时进行退款，为了买家对您店铺保持信任，您可联系客服处理或自行处理，处理流程为：\nAPP首页 - 订单/出入 - 搜索订单编号'+(f.orderNo?'（'+f.orderNo+'）':'')+'- 找到该商品选择申���退款即可。选择"退款退货"提交申请即可。';
+        }
+        return storePrefix + msg;
+    }
+    if(id===5){
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='商家您好，';
+        if(f.time) msg+=f.time+'，';
+        msg+='顾客购买'+goodsFmt(f.goods);
+        if(f.amount) msg+=fmt(f.amount);
+        msg+='，已通过平台付款，同时扫描商家个人收款码支付';
+        msg+=fmt(f.repeatAmount||f.amount);
+        msg+=orderInfo(f);
+        msg+='，辛苦核实是否收到，如收到可联系顾客自行退款，为了保障您店铺财产安全及顾客体验，云值守期间请您将个人收款码收起，以便客服核对账单，避免出现漏付，感谢配合！';
+        return storePrefix + msg;
+    }
+    if(id===6){
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='商家您好，';
+        if(f.time) msg+=f.time+'，';
+        msg+='顾客疑似未成年人购买'+(f.goods||'香烟');
+        if(f.amount) msg+=fmt(f.amount);
+        msg+=orderInfo(f);
+        msg+='，因该顾客未成年购买香烟，需办理退款，'+(f.handle||'香烟已放回至烟柜');
+        msg+='，客服侧已发起退款，退款发起后24h系统将自动退款，辛苦您确认，无异常请点击同意退款，如有异常情况请在发起24h内及时点击拒绝退款。\n▸ 如何查看异常回放及退款详情：\n请打开微店商家APP，进入首页：\n【订单/出入】- 搜索订单编号'+(f.orderNo?'（'+f.orderNo+'）':'')+'→ 查看视频回放及查看订单信息 → 确认后点击【待商家处理退款】→ 点击【同意退款】/【拒绝退款】，如有任何问题可以随时联系服务管家，竭诚为您服务。';
+        return storePrefix + msg;
+    }
+    if(id===7){
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='商家您好，';
+        if(f.time) msg+=f.time+'，';
+        let g=f.goods?f.goods.trim():'商品';
+        if(g==='水') g='1瓶矿泉水';
+        msg+='顾客购买'+g;
+        if(f.amount){const a=f.amount.trim();msg+='支付'+(a.includes('元')?a:a+'元');}
+        msg+=orderInfo(f);
+        msg+='到您的个人收款账户，辛苦您确认，为了保障您店铺财产安全，云值守期间请您将个人收款码收起，以便客服核对账单，避免出现漏付，感谢配合！';
+        return storePrefix + msg;
+    }
+    if(id===8){
+        const fmt2=(amt)=>{if(!amt)return'';const a=amt.trim();return a.includes('元')?a:a+'元';};
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='异常情况：';
+        if(f.time) msg+=f.time+'，';
+        msg+='顾客进店购买商品';
+        if(f.goods) msg+='（'+f.goods.trim()+(f.amount?'/'+fmt2(f.amount):'')+')';
+        msg+=orderInfo(f);
+        msg+='，误将商品打碎，客服引导顾客将打碎的商品付款后并整理后离店，请商家知晓。';
+        return storePrefix + msg;
+    }
+    if(id===9){
+        let storePrefix = f.storeId ? '【店铺ID：'+f.storeId+'】\n' : '';
+        let msg='商家您好，顾客于';
+        if(f.time) msg+=f.time;
+        msg+='进店，自称是骑手过来取货';
+        let p=[];
+        if(f.orderNo) p.push('订单号：'+f.orderNo);
+        if(f.phone) p.push('顾客手机号：'+f.phone);
+        if(p.length) msg+='（'+p.join('，')+'）';
+        msg+='，客服侧、骑手侧多次电话联系您未接听，骑手表示不取了，请您核实。';
+        if(f.riderPhone) msg+='骑手手机号：'+f.riderPhone;
+        return storePrefix + msg;
+    }
+    return '';
+}
+
+// 通用占位符替换
+function templateGenerate(template, fields, values) {
+    let result = template;
+    fields.forEach(field => {
+        const val = values[field.key] || '';
+        result = result.replace(new RegExp('\\{' + field.key + '\\}', 'g'), val);
+    });
+    return result;
+}
+
+// ===== 前台逻辑 =====
+let scenes = [];
+let currentSceneIndex = 0;
+
+function checkPwd() {
+    const pwd = document.getElementById('pwdInput').value;
+    if(pwd === getFrontPwd()) {
+        document.getElementById('lockScreen').style.display = 'none';
+    } else {
+        document.getElementById('lockError').textContent = '密码错误，请重新输入';
+        document.getElementById('pwdInput').value = '';
+        document.getElementById('pwdInput').focus();
+    }
+}
+
+function initFront() {
+    scenes = loadScenes();
+    renderTabs();
+    switchScene(0);
+}
+
+function renderTabs() {
+    let html = '';
+    scenes.forEach((s, i) => {
+        html += `<div class="tab ${i===currentSceneIndex?'active':''}" onclick="switchScene(${i})">${s.name}</div>`;
+    });
+    document.getElementById('templateTabs').innerHTML = html;
+}
+
+function switchScene(index) {
+    currentSceneIndex = index;
+    renderTabs();
+    const scene = scenes[index];
+    document.getElementById('formTitle').textContent = scene.name;
+    renderFields(scene);
+    document.getElementById('resultSection').style.display = 'none';
+}
+
+function renderFields(scene) {
+    let html = '';
+    scene.fields.forEach(f => {
+        html += `<div class="form-row"><label>${f.label}</label><input type="text" id="field_${f.key}" placeholder="${f.placeholder||''}" value="${f.defaultVal||''}"></div>`;
+    });
+    document.getElementById('formFields').innerHTML = html;
+}
+
+function getFieldValues(scene) {
+    const values = {};
+    scene.fields.forEach(f => {
+        const el = document.getElementById('field_' + f.key);
+        values[f.key] = el ? el.value.trim() : '';
+    });
+    return values;
+}
+
+function generate() {
+    const scene = scenes[currentSceneIndex];
+    const values = getFieldValues(scene);
+    let result = '';
+    if(scene.template && scene.template.startsWith('__BUILTIN_')) {
+        const id = parseInt(scene.template.replace('__BUILTIN_','').replace('__',''));
+        result = builtinGenerate(id, values);
+    } else {
+        result = templateGenerate(scene.template, scene.fields, values);
+    }
+    document.getElementById('resultBox').textContent = result;
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('copyBtn').textContent = '📋 一键复制';
+    document.getElementById('copyBtn').classList.remove('copied');
+    document.getElementById('copyTip').textContent = '';
+    document.getElementById('resultSection').scrollIntoView({behavior:'smooth'});
+}
+
+function copyResult() {
+    const text = document.getElementById('resultBox').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = '✅ 已复制';
+        btn.classList.add('copied');
+        document.getElementById('copyTip').textContent = '已复制到剪贴板，可直接粘贴到群聊';
+        setTimeout(() => { btn.textContent='📋 一键复制'; btn.classList.remove('copied'); document.getElementById('copyTip').textContent=''; }, 3000);
+    });
+}
+
+function clearForm() {
+    const scene = scenes[currentSceneIndex];
+    scene.fields.forEach(f => {
+        const el = document.getElementById('field_' + f.key);
+        if(el) el.value = f.defaultVal || '';
+    });
+    document.getElementById('resultSection').style.display = 'none';
+}
+
+// ===== 后台逻辑 =====
+function showAdminLogin() {
+    document.getElementById('adminPwdInput').value = '';
+    document.getElementById('adminLoginError').textContent = '';
+    showModal('adminLoginModal');
+    setTimeout(() => document.getElementById('adminPwdInput').focus(), 100);
+}
+
+function checkAdminLogin() {
+    const pwd = document.getElementById('adminPwdInput').value;
+    if(pwd === getAdminPwd()) {
+        closeModal('adminLoginModal');
+        showAdminPanel();
+    } else {
+        document.getElementById('adminLoginError').textContent = '密码错误';
+        document.getElementById('adminPwdInput').value = '';
+    }
+}
+
+function showAdminPanel() {
+    renderAdminSceneList();
+    showModal('adminPanel');
+}
+
+function renderAdminSceneList() {
+    let html = '';
+    scenes.forEach((s, i) => {
+        html += `<div class="scene-list-item">
+            <span>${s.name}</span>
+            <div class="item-btns">
+                <button style="background:#667eea;color:white;" onclick="showEditScene(${i})">编辑</button>
+                <button style="background:#f44336;color:white;" onclick="confirmDeleteScene(${i})">删除</button>
+            </div>
+        </div>`;
+    });
+    document.getElementById('adminSceneList').innerHTML = html || '<div style="text-align:center;color:#999;padding:20px;">暂无场景</div>';
+}
+
+let editingSceneIndex = -1;
+
+function showAddScene() {
+    editingSceneIndex = -1;
+    document.getElementById('editSceneTitle').textContent = '添加场景';
+    document.getElementById('sceneNameInput').value = '';
+    document.getElementById('sceneTemplate').value = '';
+    document.getElementById('deleteSceneBtn').style.display = 'none';
+    document.getElementById('fieldTableBody').innerHTML = '';
+    addFieldRow();
+    showModal('editSceneModal');
+}
+
+function showEditScene(index) {
+    editingSceneIndex = index;
+    const scene = scenes[index];
+    document.getElementById('editSceneTitle').textContent = '编辑场景';
+    document.getElementById('sceneNameInput').value = scene.name;
+    document.getElementById('sceneTemplate').value = scene.template.startsWith('__BUILTIN_') ? '' : scene.template;
+    document.getElementById('deleteSceneBtn').style.display = 'inline-block';
+    const tbody = document.getElementById('fieldTableBody');
+    tbody.innerHTML = '';
+    scene.fields.forEach(f => addFieldRow(f));
+    showModal('editSceneModal');
+}
+
+function addFieldRow(f) {
+    const tbody = document.getElementById('fieldTableBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" value="${f?f.key:''}" placeholder="如：goods"></td>
+        <td><input type="text" value="${f?f.label:''}" placeholder="如：购买商品"></td>
+        <td><input type="text" value="${f?f.placeholder:''}" placeholder="输入提示"></td>
+        <td><input type="text" value="${f?f.defaultVal:''}" placeholder="默认值"></td>
+        <td style="text-align:center;"><input type="checkbox" ${f&&f.required?'checked':''}></td>
+        <td><button onclick="this.closest('tr').remove()" style="background:#f44336;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">删</button></td>
+    `;
+    tbody.appendChild(tr);
+}
+
+function getFieldsFromTable() {
+    const rows = document.querySelectorAll('#fieldTableBody tr');
+    const fields = [];
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const key = inputs[0].value.trim();
+        if(!key) return;
+        fields.push({
+            key: key,
+            label: inputs[1].value.trim() || key,
+            placeholder: inputs[2].value.trim(),
+            defaultVal: inputs[3].value.trim(),
+            required: inputs[4].checked
+        });
+    });
+    return fields;
+}
+
+function saveScene() {
+    const name = document.getElementById('sceneNameInput').value.trim();
+    const template = document.getElementById('sceneTemplate').value.trim();
+    const fields = getFieldsFromTable();
+    if(!name) { alert('请填写场景名称'); return; }
+    if(!template) { alert('请填写话术模板'); return; }
+    if(fields.length === 0) { alert('请至少添加一个字段'); return; }
+
+    const scene = { id: Date.now(), name, fields, template };
+    if(editingSceneIndex === -1) {
+        scenes.push(scene);
+    } else {
+        scenes[editingSceneIndex] = scene;
+    }
+    saveScenes(scenes);
+    renderTabs();
+    renderAdminSceneList();
+    closeModal('editSceneModal');
+}
+
+function confirmDeleteScene(index) {
+    if(!confirm('确定删除场景"' + scenes[index].name + '"吗？')) return;
+    scenes.splice(index, 1);
+    saveScenes(scenes);
+    if(currentSceneIndex >= scenes.length) currentSceneIndex = 0;
+    renderTabs();
+    if(scenes.length > 0) switchScene(currentSceneIndex);
+    renderAdminSceneList();
+}
+
+function deleteScene() {
+    if(editingSceneIndex === -1) return;
+    confirmDeleteScene(editingSceneIndex);
+    closeModal('editSceneModal');
+}
+
+function showChangePwd() {
+    document.getElementById('showFrontPwd').textContent = getFrontPwd();
+    document.getElementById('showAdminPwd').textContent = getAdminPwd();
+    document.getElementById('newFrontPwd').value = '';
+    document.getElementById('newAdminPwd').value = '';
+    showModal('changePwdModal');
+}
+
+function savePwd() {
+    const fp = document.getElementById('newFrontPwd').value.trim();
+    const ap = document.getElementById('newAdminPwd').value.trim();
+    if(fp) localStorage.setItem('frontPwd', fp);
+    if(ap) localStorage.setItem('adminPwd', ap);
+    alert('密码已保存');
+    closeModal('changePwdModal');
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+window.onload = initFront;
+</script>
+</body>
+</html>
